@@ -1,5 +1,15 @@
-import React from 'react';
-import {DataGrid, GridColDef, GridValueGetterParams } from '@material-ui/data-grid'
+import React, {useState} from 'react';
+import {DataGrid, GridColDef, GridValueGetterParams, GridSelectionModel} from '@material-ui/data-grid'
+import {server_calls} from '../../api';
+import {useGetData} from '../../custom-hooks';
+import {Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle
+} from '@material-ui/core';
+import {CarForm} from '../../components';
 
 const columns: GridColDef[] = [
     { field: 'id', headerName: 'ID', flex: 1, minWidth: 95 },
@@ -40,24 +50,48 @@ const columns: GridColDef[] = [
         }`,
     },
   ];
-  
-  const rows = [
-    { id: 1, make: 'Honda', model: 'Accord', price: 35000 },
-    { id: 2, make: 'Toyota', model: 'Carola', price: 42000 },
-    { id: 3, make: 'Honda', model: 'Element', price: 45000 },
-    { id: 4, make: 'Mercedez Benz', model: 'C350', price: 16000 },
-    { id: 5, make: 'Audi', model: 'A4', price: null },
-    { id: 6, make: 'Nissan', model: null, price: 150000 },
-    { id: 7, make: 'Nissan', model: 'Altima', price: 44000 },
-    { id: 8, make: 'Accura', model: 'MDX', price: 36000 },
-    { id: 9, make: 'BMW', model: 'iX', price: 65000 },
-  ];
 
-export const DataTable= () => {
+  export const DataTable= () => {
+    let {carData, getData} = useGetData();
+    let [open, setOpen] = useState(false);
+    let [gridData, setData] = useState<GridSelectionModel>([]);
+  
+    let handleOpen = () => {
+      setOpen(true)
+    }
+  
+    let handleClose = () => {
+      setOpen(false)
+    }
+  
+    let deleteData = () => {
+      server_calls.delete(`${gridData[0]}`)
+      getData()
+    }
+
     return (
-        <div style={{height: 400, width: '100%'}}>
-            <h2> Cars In Inventory </h2>
-            <DataGrid rows={rows} columns={columns} pageSize={5} checkboxSelection />
-        </div>
+      <div style={{height: 400, width: '100%'}}>
+          <h2> Cars In Collection </h2>
+          <DataGrid rows={carData} columns={columns} pageSize={5} checkboxSelection onSelectionModelChange={(newSelectionModel) => {
+            setData(newSelectionModel);
+            }}
+            selectionModel={gridData}
+            {...carData}
+          />
+        <Button onClick={handleOpen}>Update</Button>
+        <Button variant="contained" color="secondary" onClick={deleteData}>Delete</Button>
+
+        {/* Dialog Pop up starts here */}
+        <Dialog open={open} onClose={handleClose} aria-labelledby="form-dialog-title">
+          <DialogTitle id="form-dialog-title">Update Your Car</DialogTitle>
+          <DialogContent>
+            <DialogContentText>Update Car {gridData[0]}</DialogContentText>
+            <CarForm id={`${gridData[0]}`} />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleClose} color="primary">Cancel</Button>
+          </DialogActions>
+        </Dialog>
+      </div>
     )
-}
+  }
